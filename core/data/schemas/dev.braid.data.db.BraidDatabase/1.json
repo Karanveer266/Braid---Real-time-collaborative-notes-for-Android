@@ -1,0 +1,69 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "5414cbe30fa1d93d52e133c68403c452",
+    "entities": [
+      {
+        "tableName": "ops",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`author` INTEGER NOT NULL, `seq` INTEGER NOT NULL, `ts_millis` INTEGER NOT NULL, `ts_counter` INTEGER NOT NULL, `payload` BLOB NOT NULL, PRIMARY KEY(`author`, `seq`))",
+        "fields": [
+          {
+            "fieldPath": "author",
+            "columnName": "author",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seq",
+            "columnName": "seq",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tsMillis",
+            "columnName": "ts_millis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tsCounter",
+            "columnName": "ts_counter",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "author",
+            "seq"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ops_ts_millis_ts_counter_author",
+            "unique": false,
+            "columnNames": [
+              "ts_millis",
+              "ts_counter",
+              "author"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ops_ts_millis_ts_counter_author` ON `${TABLE_NAME}` (`ts_millis`, `ts_counter`, `author`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5414cbe30fa1d93d52e133c68403c452')"
+    ]
+  }
+}

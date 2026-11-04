@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Pinned instead of ubuntu-latest so the runner image cannot change under us
+    # (ubuntu-latest moves to Ubuntu 26 from Oct 2026).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      # Fewer surprises on CI: plain logs, no daemon to leak between steps.
+      GRADLE_OPTS: -Dorg.gradle.console=plain
+    steps:
+      - uses: actions/checkout@v5
+
+      # The first CI run died here with exit code 126: `gradlew` had been committed without
+      # its executable bit (common with uploads from Windows or the GitHub web UI). Git stores
+      # the mode per file, so the fix is in two places: the repo (`git update-index --chmod=+x
+      # gradlew`) and this guard, which makes CI independent of how the file was committed.
+      # The `sed` strips any CRLF endings, which would otherwise fail with exit code 127.
+      - name: Make Gradle wrapper executable
+        run: |
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # v5: Node 24 runtime, validates gradle-wrapper.jar checksums by default and caches
+      # ~/.gradle. (v6 moves caching into a separately licensed component, so stay on v5.)
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Print toolchain
+        run: ./gradlew --version
+
+      # Pure-JVM modules first: they hold the CRDT, crypto and protocol, and fail fastest.
+      - name: CRDT + sync tests (JVM)
+        run: ./gradlew :core:crdt:test :core:sync:test
+
+      - name: Data layer tests (Robolectric + real SQLite)
+        run: ./gradlew :core:data:testDebugUnitTest
+
+      - name: App unit tests, lint, release build (R8)
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
+
+      - name: Upload test and lint reports
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: reports
+          path: |
+            **/build/reports/
+            **/build/test-results/
+          if-no-files-found: ignore
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: braid-release
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Replica state is deliberately NOT backed up. Restoring an old op log together with its replica
+  id onto a new device would make that device re-issue sequence numbers that peers already hold
+  with different content. Data is "backed up" by the mesh itself: rejoin and peers resend it.
+  The sealed invite is useless without the non-exportable Keystore key anyway.
+-->
+<full-backup-content>
+    <exclude domain="database" path="." />
+    <exclude domain="file" path="datastore/" />
+</full-backup-content>

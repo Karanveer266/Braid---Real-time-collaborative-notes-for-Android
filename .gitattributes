@@ -1,0 +1,20 @@
+# Normalise line endings in the repository. Without this, a Windows checkout with
+# core.autocrlf=true (or a web upload) can rewrite `gradlew` with CRLF endings, and
+# Linux then fails with "/bin/sh^M: bad interpreter" (exit 127).
+* text=auto eol=lf
+
+# Shell scripts must always be LF, whatever the platform.
+gradlew        text eol=lf
+*.sh           text eol=lf
+
+# Windows batch files must be CRLF.
+*.bat          text eol=crlf
+*.cmd          text eol=crlf
+
+# Binary artefacts: never touch these.
+*.jar          binary
+*.png          binary
+*.webp         binary
+*.jpg          binary
+*.keystore     binary
+*.jks          binary
